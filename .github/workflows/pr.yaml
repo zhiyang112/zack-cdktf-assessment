@@ -1,0 +1,88 @@
+name: Run Integration Tests
+
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  run-it-tests-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+          terraform_wrapper: false
+
+      - name: Set up Python 3.11
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+          cache: "pipenv" # caching pipenv dependencies
+
+      - name: Install pipenv
+        id: install-pipenv
+        run: curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
+        shell: bash
+
+      - name: Set up Project
+        run: |
+          pipenv install
+
+      - name: Start LocalStack
+        run: |
+          docker pull localstack/localstack
+          # Start LocalStack in the background
+          LS_LOG=trace pipenv run localstack start -d
+          # Wait 30 seconds for the LocalStack container to become ready before timing out
+          echo "Waiting for LocalStack startup..."
+          pipenv run localstack wait -t 30
+          echo "Startup complete"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install website dependencies
+        run: npm --prefix website ci
+
+      ## TODO: Set up CDKTF cli
+
+      ## TODO: Deploy Backend with CDKTF
+
+      ## TODO: Deploy Frontend with CDKTF
+
+      - name: Run Tests
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+        run: |
+          pipenv run pytest -v tests
+
+      - name: Show localstack logs
+        if: always()
+        run: |
+          pipenv run localstack logs
+
+      - name: Generate a Diagnostic Report
+        if: failure()
+        run: |
+          curl -s localhost:4566/_localstack/diagnose | gzip -cf > diagnose.json.gz
+
+      - name: Upload the Diagnostic Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnose.json.gz
+          path: ./diagnose.json.gz

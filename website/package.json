@@ -1,0 +1,13 @@
+{
+  "name": "website",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "dotenv": "*"
+  },
+  "scripts": {
+    "deploy": "node scripts/deploy.js",
+    "destroy": "node scripts/destroy.js"
+  }
+}

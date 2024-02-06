@@ -1,0 +1,16 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[requires]
+python_version = "3"
+
+[packages]
+cdktf = "~=0.20.3"
+pytest = "*"
+cdktf-cdktf-provider-aws = "~=19.4.0"
+localstack = "*"
+terraform-local = "*"
+awscli-local = "*"
+cdktf-cdktf-provider-local = "*"

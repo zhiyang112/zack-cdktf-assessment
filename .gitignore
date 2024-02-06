@@ -1,0 +1,11 @@
+dist/
+imports/*
+!imports/__init__.py
+.terraform
+cdktf.out
+cdktf.log
+*terraform.*.tfstate*
+node_modules
+lambdas/**/lambda.zip
+lambdas/**/libs
+.env.local
