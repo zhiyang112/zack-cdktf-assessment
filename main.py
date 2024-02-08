@@ -10,8 +10,25 @@ from cdktf import App, TerraformStack, TerraformAsset, AssetType, TerraformOutpu
 # providers
 from cdktf_cdktf_provider_aws.provider import AwsProvider
 from cdktf_cdktf_provider_local.provider import LocalProvider
+from cdktf_cdktf_provider_aws.sns_topic import SnsTopic
+from cdktf_cdktf_provider_aws.sns_topic_subscription import SnsTopicSubscription
+from cdktf_cdktf_provider_aws.lambda_function import (
+    LambdaFunction,
+    LambdaFunctionEnvironment
+)
+from cdktf_cdktf_provider_aws.lambda_function_event_invoke_config import LambdaFunctionEventInvokeConfig
+from cdktf_cdktf_provider_aws.s3_bucket import S3Bucket
+from cdktf_cdktf_provider_aws.s3_bucket_public_access_block import S3BucketPublicAccessBlock
+from cdktf_cdktf_provider_aws.s3_bucket_notification import (
+    S3BucketNotification,
+    S3BucketNotificationTopic,
+)
+from cdktf_cdktf_provider_aws.ssm_parameter import SsmParameter
+from cdktf_cdktf_provider_aws.s3_bucket_website_configuration import S3BucketWebsiteConfiguration,S3BucketWebsiteConfigurationIndexDocument
+from cdktf_cdktf_provider_aws.s3_bucket_notification import S3BucketNotificationLambdaFunction
 
 # resources
+from cdktf import Token, TerraformStack
 from cdktf_cdktf_provider_local.file import File
 from cdktf_cdktf_provider_aws.lambda_function import LambdaFunction, LambdaFunctionEnvironment, LambdaFunctionDeadLetterConfig
 from cdktf_cdktf_provider_aws.lambda_function_url import LambdaFunctionUrl
@@ -27,7 +44,7 @@ def run_command(commands, cwd):
 
 def lambda_libs(lambda_dir):
     """Install requirements.txt to libs subfolder."""
-    os_name = os.uname().sysname
+    os_name = os.name
     
     # ref https://docs.aws.amazon.com/lambda/latest/dg/python-package.html#python-package-create-dependencies
     if os_name == "Darwin":
@@ -39,8 +56,9 @@ def lambda_libs(lambda_dir):
     else:
         # Other OS (assuming Linux) specific commands
         commands = [
-            "rm -rf libs && mkdir libs",
-            "pip install -r requirements.txt -t libs --platform manylinux_2_28_x86_64 --python-version 3.9 --no-deps",
+            "rmdir /s /q libs",
+            "mkdir libs",
+            "pip install -r requirements.txt -t libs --python-version 3.9 --no-deps",
         ]
     run_command(commands, lambda_dir)
 
@@ -52,28 +70,101 @@ class BackendStack(TerraformStack):
         lambda_role = "arn:aws:iam::000000000000:role/lambda-role"
         AwsProvider(self, "Aws")
 
-        # TODO: Create S3 Buckets for ["images", "resized"]
-
-        # TODO: Create SSM Parameters /localstack-thumbnail-app/buckets/["images", "resized"]
-
-        # TODO: Create failed-resize SNS Topic and SNS Topic Subscription (email protocol)
+        # ✅ Create failed-resize SNS Topic and SNS Topic Subscription (email protocol)
+        dlq_topic = SnsTopic(
+            self,
+            "failed_resize_topic",
+            fifo_topic=True,
+            name="failed_resize_topic",
+        )
+        SnsTopicSubscription(
+            self,
+            "failed_resize_topic_sub",
+            # TODO: enpoint email address
+            endpoint="email_address",
+            protocol="email",
+            topic_arn=dlq_topic.arn,
+        )        
 
         # build lambdas/resize/libs folder
         # reference https://developer.hashicorp.com/terraform/cdktf/concepts/assets
+
+        # ✅ Set resize lambda's dead_letter_config to failed-resize SNS Topic
         lambda_libs("lambdas/resize")
         resize_asset = TerraformAsset(self, "resize_asset",
             path = Path.join(os.getcwd(), "lambdas/resize"),
             type = AssetType.ARCHIVE,
         )
+        resize_lambda_func = LambdaFunction(
+            self,
+            "resize_func_lambda",
+            function_name="resize",
+            runtime="python3.9",
+            timeout=10,
+            handler="handler.handler",
+            role=lambda_role,
+            filename=resize_asset.path,
+            source_code_hash=resize_asset.asset_hash,
+            environment=LambdaFunctionEnvironment(variables={"STAGE": "local"}),
+            dead_letter_config={"target_arn": dlq_topic.arn},
+        )
+        LambdaFunctionEventInvokeConfig(
+            self,
+            f"resize_invoke",
+            function_name=resize_lambda_func.function_name,
+            maximum_event_age_in_seconds=300,
+            maximum_retry_attempts=2,
+            qualifier="$LATEST",
+        )
 
-        # TODO: Create Lambda functions for resize, list and presign handlers
-        
-        # TODO: Set resize lambda's dead_letter_config to failed-resize SNS Topic
-        
-        # TODO: Set LambdaFunctionEventInvokeConfig
+        # ✅ Create S3 Buckets for ["images", "resized"]
+        # ✅ Create SSM Parameters /localstack-thumbnail-app/buckets/["images", "resized"]
+        # ✅ Set S3BucketNotification for images bucket to Trigger resize lambda on "s3:ObjectCreated:*"
 
-        # TODO: Set S3BucketNotification for images bucket to Trigger resize lambda on "s3:ObjectCreated:*"
-        
+        be_buckets = [
+            {
+                "name": "images",
+                "configuration": {
+                    "trigger": True,
+                    "event": ["s3:ObjectCreated:*"],
+                    "lambda_function_arn": resize_lambda_func.arn,
+                },
+            },
+            {"name": "resized", "configuration": {"trigger": False}},
+        ]
+
+        # ✅ Set S3BucketNotification for images bucket to Trigger resize lambda on "s3:ObjectCreated:*"
+        for bkt in be_buckets:
+            # Create bucket
+            bucket = S3Bucket(
+                self,
+                f"{bkt["name"]}_bucket",
+                bucket=f"/localstack-thumbnail-app/buckets/{bkt["name"]}",
+            )
+            # Create SSM Param store variable
+            SsmParameter(
+                self,
+                f"{bkt["name"]}_bucket_ssm",
+                name=f"{bkt["name"]}_bucket",
+                type="String",
+                value=bucket.id,
+            )
+            # Create trigger
+            if bkt["configuration"]["trigger"]:
+                S3BucketNotification(self, f"{bkt['name']}_notification",
+                    bucket=bucket.id,
+                    lambda_function=[S3BucketNotificationLambdaFunction(
+                        events=bkt["configuration"]["event"],
+                        lambda_function_arn=Token.as_string(bkt["configuration"][
+                                "lambda_function_arn"
+                            ])
+                    )
+                    ]
+                )
+
+        # ✅ Create Lambda functions for resize, list and presign handlers
+        # ✅ Set LambdaFunctionEventInvokeConfig
+                         
         functions=["presign", "list"]
         for function_name in functions:
             asset = TerraformAsset(self, f"{function_name}_asset",
@@ -96,9 +187,21 @@ class BackendStack(TerraformStack):
                 function_name=lambda_function.function_name,
                 authorization_type="NONE"
             )
+            LambdaFunctionEventInvokeConfig(
+                self,
+                f"{function_name}_invoke",
+                function_name=Token.as_string(lambda_function.function_name),
+                maximum_event_age_in_seconds=300,
+                maximum_retry_attempts=2,
+                qualifier="$LATEST",
+            )
             TerraformOutput(self, f"{function_name}_url",
                 value = function_url.function_url,
             )
+
+        
+
+        
 
 class FrontEndStack(TerraformStack):
     def __init__(self, scope: Construct, id: str):
@@ -107,9 +210,32 @@ class FrontEndStack(TerraformStack):
         AwsProvider(self, "Aws")
         LocalProvider(self, "local")
 
-        # TODO: Create S3 Buckets for "webapp"
-
-        # TODO: Set S3BucketWebsiteConfiguration and s3 policy for PulblicRead
+        # ✅ Create S3 Buckets for "webapp"
+        # ✅ Set S3BucketWebsiteConfiguration and s3 policy for PulblicRead
+        fe_buckets = [
+            {
+                "name": "webapp",
+                "config": {"block_public_access": False},
+            }
+        ]
+        for bkt in fe_buckets:
+            # Create bucket
+            bucket = S3Bucket(
+                self,
+                f"{bkt['name']}_bucket",
+                bucket=f"/localstack-thumbnail-app/buckets/{bkt['name']}",
+            )
+            # Configure public access
+            S3BucketPublicAccessBlock(self, f"{bkt['name']}_public_access",
+            block_public_acls=bkt["config"]["block_public_access"],
+            block_public_policy=bkt["config"]["block_public_access"],
+            bucket=bucket.id,
+        )
+            S3BucketWebsiteConfiguration(self, f"{bkt['name']}_config",
+                                         bucket=Token.as_string(bucket.id),
+                                         index_document=S3BucketWebsiteConfigurationIndexDocument(
+                suffix="index.html"
+            ),)
 
         # Write dotenv config for website deploy script
         File(self, "env",
