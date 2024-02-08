@@ -7,12 +7,12 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
+    types: [labeled]
   workflow_dispatch:
 
 jobs:
   run-it-tests-job:
+    if: ${{ (github.event_name == 'workflow_dispatch') || (github.event.label.name == 'deploy') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,11 +23,11 @@ jobs:
           terraform_version: "1.5.7"
           terraform_wrapper: false
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.12
           cache: "pipenv" # caching pipenv dependencies
 
       - name: "Set up Poetry"
