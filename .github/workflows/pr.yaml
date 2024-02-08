@@ -70,6 +70,7 @@ jobs:
 
       ## TODO: Deploy Backend with CDKTF
       - name: Deploy Backend with CDKTF
+        working-directory: ./
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
@@ -77,6 +78,7 @@ jobs:
 
       ## TODO: Deploy Frontend with CDKTF
       - name: Deploy Frontend with CDKTF
+        working-directory: ./
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
