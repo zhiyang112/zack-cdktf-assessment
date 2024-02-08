@@ -79,49 +79,55 @@ jobs:
 
           tfenv install latest
 
-      ## TODO: cdktf synth
-      - name: CDKTF synth
-        env:
-          TERRAFORM_BINARY_NAME: tflocal
+      ## TODO: Check terraform cli
+      - name: Check terraform
+        id: check-tf
         run: |
-          poetry run cdktf synth
+          terraform --version
 
-      ## TODO: Deploy Backend with CDKTF
-      - name: Deploy Backend with CDKTF
-        env:
-          TERRAFORM_BINARY_NAME: tflocal
-        run: |
-          poetry run cdktf apply iac-assignment-backend
+      # ## TODO: cdktf synth
+      # - name: CDKTF synth
+      #   env:
+      #     TERRAFORM_BINARY_NAME: tflocal
+      #   run: |
+      #     poetry run cdktf synth
 
-      ## TODO: Deploy Frontend with CDKTF
-      - name: Deploy Frontend with CDKTF
-        env:
-          TERRAFORM_BINARY_NAME: tflocal
-        run: |
-          poetry run cdktf apply iac-assignment-frontend
+      # ## TODO: Deploy Backend with CDKTF
+      # - name: Deploy Backend with CDKTF
+      #   env:
+      #     TERRAFORM_BINARY_NAME: tflocal
+      #   run: |
+      #     poetry run cdktf apply iac-assignment-backend
 
-      - name: Run Tests
-        env:
-          AWS_DEFAULT_REGION: us-east-1
-          AWS_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-        run: |
-          poetry run pipenv run pytest -v tests
+      # ## TODO: Deploy Frontend with CDKTF
+      # - name: Deploy Frontend with CDKTF
+      #   env:
+      #     TERRAFORM_BINARY_NAME: tflocal
+      #   run: |
+      #     poetry run cdktf apply iac-assignment-frontend
 
-      - name: Show localstack logs
-        if: always()
-        run: |
-          poetry run pipenv run localstack logs
+      # - name: Run Tests
+      #   env:
+      #     AWS_DEFAULT_REGION: us-east-1
+      #     AWS_REGION: us-east-1
+      #     AWS_ACCESS_KEY_ID: test
+      #     AWS_SECRET_ACCESS_KEY: test
+      #   run: |
+      #     poetry run pipenv run pytest -v tests
 
-      - name: Generate a Diagnostic Report
-        if: failure()
-        run: |
-          curl -s localhost:4566/_localstack/diagnose | gzip -cf > diagnose.json.gz
+      # - name: Show localstack logs
+      #   if: always()
+      #   run: |
+      #     poetry run pipenv run localstack logs
 
-      - name: Upload the Diagnostic Report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagnose.json.gz
-          path: ./diagnose.json.gz
+      # - name: Generate a Diagnostic Report
+      #   if: failure()
+      #   run: |
+      #     curl -s localhost:4566/_localstack/diagnose | gzip -cf > diagnose.json.gz
+
+      # - name: Upload the Diagnostic Report
+      #   if: failure()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: diagnose.json.gz
+      #     path: ./diagnose.json.gz
