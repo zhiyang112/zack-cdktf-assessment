@@ -85,7 +85,7 @@ jobs:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
           poetry run cdktf synth
-      ##  poetry run cdktf apply iac-assignment-backend
+          poetry run cdktf apply iac-assignment-backend
 
       ## TODO: Deploy Frontend with CDKTF
       - name: Deploy Frontend with CDKTF
@@ -93,7 +93,7 @@ jobs:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
           poetry run cdktf synth
-      ##  poetry run cdktf apply iac-assignment-frontend
+          poetry run cdktf apply iac-assignment-frontend
 
       - name: Run Tests
         env:
