@@ -79,12 +79,18 @@ jobs:
 
           tfenv install latest
 
+      ## TODO: cdktf synth
+      - name: CDKTF synth
+        env:
+          TERRAFORM_BINARY_NAME: tflocal
+        run: |
+          poetry run cdktf synth
+
       ## TODO: Deploy Backend with CDKTF
       - name: Deploy Backend with CDKTF
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
-          poetry run cdktf synth
           poetry run cdktf apply iac-assignment-backend
 
       ## TODO: Deploy Frontend with CDKTF
@@ -92,7 +98,6 @@ jobs:
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
-          poetry run cdktf synth
           poetry run cdktf apply iac-assignment-frontend
 
       - name: Run Tests
