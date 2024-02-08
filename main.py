@@ -70,10 +70,14 @@ def lambda_libs(lambda_dir):
         ]
     else:
         # Other OS (assuming Linux) specific commands
+        # commands = [
+        #     "rmdir /s /q libs",
+        #     "mkdir libs",
+        #     "pip install -r requirements.txt -t libs --python-version 3.9 --no-deps",
+        # ]
         commands = [
-            "rmdir /s /q libs",
-            "mkdir libs",
-            "pip install -r requirements.txt -t libs --python-version 3.9 --no-deps",
+            "rm -rf libs && mkdir libs",
+            "pip install -r requirements.txt -t libs --platform manylinux_2_28_x86_64 --python-version 3.9 --no-deps",
         ]
     run_command(commands, lambda_dir)
 
