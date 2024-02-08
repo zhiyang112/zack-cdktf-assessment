@@ -14,24 +14,38 @@ from cdktf_cdktf_provider_aws.sns_topic import SnsTopic
 from cdktf_cdktf_provider_aws.sns_topic_subscription import SnsTopicSubscription
 from cdktf_cdktf_provider_aws.lambda_function import (
     LambdaFunction,
-    LambdaFunctionEnvironment
+    LambdaFunctionEnvironment,
 )
-from cdktf_cdktf_provider_aws.lambda_function_event_invoke_config import LambdaFunctionEventInvokeConfig
+from cdktf_cdktf_provider_aws.lambda_function_event_invoke_config import (
+    LambdaFunctionEventInvokeConfig,
+)
 from cdktf_cdktf_provider_aws.s3_bucket import S3Bucket
-from cdktf_cdktf_provider_aws.s3_bucket_public_access_block import S3BucketPublicAccessBlock
+from cdktf_cdktf_provider_aws.s3_bucket_public_access_block import (
+    S3BucketPublicAccessBlock,
+)
 from cdktf_cdktf_provider_aws.s3_bucket_notification import (
     S3BucketNotification,
     S3BucketNotificationTopic,
 )
 from cdktf_cdktf_provider_aws.ssm_parameter import SsmParameter
-from cdktf_cdktf_provider_aws.s3_bucket_website_configuration import S3BucketWebsiteConfiguration,S3BucketWebsiteConfigurationIndexDocument
-from cdktf_cdktf_provider_aws.s3_bucket_notification import S3BucketNotificationLambdaFunction
+from cdktf_cdktf_provider_aws.s3_bucket_website_configuration import (
+    S3BucketWebsiteConfiguration,
+    S3BucketWebsiteConfigurationIndexDocument,
+)
+from cdktf_cdktf_provider_aws.s3_bucket_notification import (
+    S3BucketNotificationLambdaFunction,
+)
 
 # resources
 from cdktf import Token, TerraformStack
 from cdktf_cdktf_provider_local.file import File
-from cdktf_cdktf_provider_aws.lambda_function import LambdaFunction, LambdaFunctionEnvironment, LambdaFunctionDeadLetterConfig
+from cdktf_cdktf_provider_aws.lambda_function import (
+    LambdaFunction,
+    LambdaFunctionEnvironment,
+    LambdaFunctionDeadLetterConfig,
+)
 from cdktf_cdktf_provider_aws.lambda_function_url import LambdaFunctionUrl
+
 
 def run_command(commands, cwd):
     """Run a list of commands."""
@@ -42,10 +56,11 @@ def run_command(commands, cwd):
         print(f"An error occurred: {e}")
         sys.exit(1)
 
+
 def lambda_libs(lambda_dir):
     """Install requirements.txt to libs subfolder."""
     os_name = os.name
-    
+
     # ref https://docs.aws.amazon.com/lambda/latest/dg/python-package.html#python-package-create-dependencies
     if os_name == "Darwin":
         # MacOS specific commands
@@ -61,6 +76,7 @@ def lambda_libs(lambda_dir):
             "pip install -r requirements.txt -t libs --python-version 3.9 --no-deps",
         ]
     run_command(commands, lambda_dir)
+
 
 class BackendStack(TerraformStack):
     def __init__(self, scope: Construct, id: str):
@@ -84,16 +100,18 @@ class BackendStack(TerraformStack):
             endpoint="email_address",
             protocol="email",
             topic_arn=dlq_topic.arn,
-        )        
+        )
 
         # build lambdas/resize/libs folder
         # reference https://developer.hashicorp.com/terraform/cdktf/concepts/assets
 
         # ✅ Set resize lambda's dead_letter_config to failed-resize SNS Topic
         lambda_libs("lambdas/resize")
-        resize_asset = TerraformAsset(self, "resize_asset",
-            path = Path.join(os.getcwd(), "lambdas/resize"),
-            type = AssetType.ARCHIVE,
+        resize_asset = TerraformAsset(
+            self,
+            "resize_asset",
+            path=Path.join(os.getcwd(), "lambdas/resize"),
+            type=AssetType.ARCHIVE,
         )
         resize_lambda_func = LambdaFunction(
             self,
@@ -138,54 +156,61 @@ class BackendStack(TerraformStack):
             # Create bucket
             bucket = S3Bucket(
                 self,
-                f"{bkt["name"]}_bucket",
-                bucket=f"/localstack-thumbnail-app/buckets/{bkt["name"]}",
+                f"{bkt['name']}_bucket",
+                bucket=f"/localstack-thumbnail-app/buckets/{bkt['name']}",
             )
             # Create SSM Param store variable
             SsmParameter(
                 self,
-                f"{bkt["name"]}_bucket_ssm",
-                name=f"{bkt["name"]}_bucket",
+                f"{bkt['name']}_bucket_ssm",
+                name=f"{bkt['name']}_bucket",
                 type="String",
                 value=bucket.id,
             )
             # Create trigger
             if bkt["configuration"]["trigger"]:
-                S3BucketNotification(self, f"{bkt['name']}_notification",
+                S3BucketNotification(
+                    self,
+                    f"{bkt['name']}_notification",
                     bucket=bucket.id,
-                    lambda_function=[S3BucketNotificationLambdaFunction(
-                        events=bkt["configuration"]["event"],
-                        lambda_function_arn=Token.as_string(bkt["configuration"][
-                                "lambda_function_arn"
-                            ])
-                    )
-                    ]
+                    lambda_function=[
+                        S3BucketNotificationLambdaFunction(
+                            events=bkt["configuration"]["event"],
+                            lambda_function_arn=Token.as_string(
+                                bkt["configuration"]["lambda_function_arn"]
+                            ),
+                        )
+                    ],
                 )
 
         # ✅ Create Lambda functions for resize, list and presign handlers
         # ✅ Set LambdaFunctionEventInvokeConfig
-                         
-        functions=["presign", "list"]
+
+        functions = ["presign", "list"]
         for function_name in functions:
-            asset = TerraformAsset(self, f"{function_name}_asset",
-                path = Path.join(os.getcwd(), f"lambdas/{function_name}"),
-                type = AssetType.ARCHIVE,
+            asset = TerraformAsset(
+                self,
+                f"{function_name}_asset",
+                path=Path.join(os.getcwd(), f"lambdas/{function_name}"),
+                type=AssetType.ARCHIVE,
             )
-            lambda_function = LambdaFunction(self, f"{function_name}_lambda",
-                function_name = function_name,
-                runtime = "python3.9",
-                timeout = 10,
-                handler = "handler.handler",
-                role = lambda_role,
-                filename = asset.path,
-                source_code_hash = asset.asset_hash,
-                environment =  LambdaFunctionEnvironment(
-                    variables = {"STAGE":"local"}
-                )
+            lambda_function = LambdaFunction(
+                self,
+                f"{function_name}_lambda",
+                function_name=function_name,
+                runtime="python3.9",
+                timeout=10,
+                handler="handler.handler",
+                role=lambda_role,
+                filename=asset.path,
+                source_code_hash=asset.asset_hash,
+                environment=LambdaFunctionEnvironment(variables={"STAGE": "local"}),
             )
-            function_url = LambdaFunctionUrl(self, f"{function_name}_latest",
+            function_url = LambdaFunctionUrl(
+                self,
+                f"{function_name}_latest",
                 function_name=lambda_function.function_name,
-                authorization_type="NONE"
+                authorization_type="NONE",
             )
             LambdaFunctionEventInvokeConfig(
                 self,
@@ -195,13 +220,12 @@ class BackendStack(TerraformStack):
                 maximum_retry_attempts=2,
                 qualifier="$LATEST",
             )
-            TerraformOutput(self, f"{function_name}_url",
-                value = function_url.function_url,
+            TerraformOutput(
+                self,
+                f"{function_name}_url",
+                value=function_url.function_url,
             )
 
-        
-
-        
 
 class FrontEndStack(TerraformStack):
     def __init__(self, scope: Construct, id: str):
@@ -226,27 +250,37 @@ class FrontEndStack(TerraformStack):
                 bucket=f"/localstack-thumbnail-app/buckets/{bkt['name']}",
             )
             # Configure public access
-            S3BucketPublicAccessBlock(self, f"{bkt['name']}_public_access",
-            block_public_acls=bkt["config"]["block_public_access"],
-            block_public_policy=bkt["config"]["block_public_access"],
-            bucket=bucket.id,
-        )
-            S3BucketWebsiteConfiguration(self, f"{bkt['name']}_config",
-                                         bucket=Token.as_string(bucket.id),
-                                         index_document=S3BucketWebsiteConfigurationIndexDocument(
-                suffix="index.html"
-            ),)
+            S3BucketPublicAccessBlock(
+                self,
+                f"{bkt['name']}_public_access",
+                block_public_acls=bkt["config"]["block_public_access"],
+                block_public_policy=bkt["config"]["block_public_access"],
+                bucket=bucket.id,
+            )
+            S3BucketWebsiteConfiguration(
+                self,
+                f"{bkt['name']}_config",
+                bucket=Token.as_string(bucket.id),
+                index_document=S3BucketWebsiteConfigurationIndexDocument(
+                    suffix="index.html"
+                ),
+            )
 
         # Write dotenv config for website deploy script
-        File(self, "env",
-            filename = Path.join(os.getcwd(), "website", ".env.local"),
-            content = f"S3_BUCKET_FRONTEND={bucket.bucket}"
+        File(
+            self,
+            "env",
+            filename=Path.join(os.getcwd(), "website", ".env.local"),
+            content=f"S3_BUCKET_FRONTEND={bucket.bucket}",
         )
 
         # output bucket Name
-        TerraformOutput(self, "localstack_url",
-            value = f"http://{bucket.bucket}.s3-website.localhost.localstack.cloud:4566",
+        TerraformOutput(
+            self,
+            "localstack_url",
+            value=f"http://{bucket.bucket}.s3-website.localhost.localstack.cloud:4566",
         )
+
 
 app = App()
 BackendStack(app, "iac-assignment-backend")
