@@ -30,6 +30,15 @@ jobs:
           python-version: 3.11
           cache: "pipenv" # caching pipenv dependencies
 
+      - name: "Set up Poetry"
+        uses: abatilo/actions-poetry@v2.1.6
+        with:
+          poetry-version: 1.2.2
+
+      - name: "Install dependencies"
+        run: |
+          poetry install
+
       - name: Install pipenv
         id: install-pipenv
         run: curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
@@ -56,10 +65,23 @@ jobs:
         run: npm --prefix website ci
 
       ## TODO: Set up CDKTF cli
+      - name: Install cdktf
+        id: install-cdktf
+        run: npm i -g cdktf-cli@0.20.3
 
       ## TODO: Deploy Backend with CDKTF
+      - name: Deploy Backend with CDKTF
+        env:
+          TERRAFORM_BINARY_NAME: tflocal
+        run: |
+          poetry run cdktf apply iac-assignment-backend
 
       ## TODO: Deploy Frontend with CDKTF
+      - name: Deploy Frontend with CDKTF
+        env:
+          TERRAFORM_BINARY_NAME: tflocal
+        run: |
+          poetry run cdktf apply iac-assignment-frontend
 
       - name: Run Tests
         env:
@@ -68,12 +90,12 @@ jobs:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
         run: |
-          pipenv run pytest -v tests
+          poetry run pipenv run pytest -v tests
 
       - name: Show localstack logs
         if: always()
         run: |
-          pipenv run localstack logs
+          poetry run pipenv run localstack logs
 
       - name: Generate a Diagnostic Report
         if: failure()
