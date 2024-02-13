@@ -93,13 +93,12 @@ class BackendStack(TerraformStack):
         # ✅ Create failed-resize SNS Topic and SNS Topic Subscription (email protocol)
         dlq_topic = SnsTopic(
             self,
-            "failed_resize_topic",
-            fifo_topic=True,
-            name="failed_resize_topic",
+            "failed-resize-topic",
+            name="failed-resize-topic",
         )
         SnsTopicSubscription(
             self,
-            "failed_resize_topic_sub",
+            "failed-resize-topic-sub",
             # TODO: enpoint email address
             endpoint="email_address",
             protocol="email",
@@ -161,7 +160,7 @@ class BackendStack(TerraformStack):
             bucket = S3Bucket(
                 self,
                 f"{bkt['name']}_bucket",
-                bucket=f"/localstack-thumbnail-app/buckets/{bkt['name']}",
+                bucket=f"localstack-thumbnails-app-{bkt['name']}",
             )
             # Create SSM Param store variable
             SsmParameter(
