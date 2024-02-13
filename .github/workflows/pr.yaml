@@ -89,21 +89,21 @@ jobs:
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
-          poetry run cdktf synth
+          cdktf synth
 
       ## TODO: Deploy Backend with CDKTF
       - name: Deploy Backend with CDKTF
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
-          poetry run cdktf apply iac-assignment-backend
+          cdktf apply iac-assignment-backend
 
       ## TODO: Deploy Frontend with CDKTF
       - name: Deploy Frontend with CDKTF
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
-          poetry run cdktf apply iac-assignment-frontend
+          cdktf apply iac-assignment-frontend
 
       - name: Run Tests
         env:
@@ -112,12 +112,12 @@ jobs:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
         run: |
-          poetry run pipenv run pytest -v tests
+          pipenv run pytest -v tests
 
       - name: Show localstack logs
         if: always()
         run: |
-          poetry run pipenv run localstack logs
+          pipenv run localstack logs
 
       - name: Generate a Diagnostic Report
         if: failure()
