@@ -102,7 +102,7 @@ class BackendStack(TerraformStack):
             self,
             "failed-resize-topic-sub",
             endpoint="my-email@example.com",
-            protocol="email",
+            protocol="email-json",
             topic_arn=dlq_topic.arn,
         )
 
