@@ -146,7 +146,6 @@ class BackendStack(TerraformStack):
                 "name": "images",
                 "configuration": {
                     "trigger": True,
-                    "event": ["s3:ObjectCreated:*"],
                     "lambda_function_arn": resize_lambda_func.arn,
                 },
             },
@@ -170,17 +169,18 @@ class BackendStack(TerraformStack):
                 value=bucket.id,
             )
             # Create trigger
-            if bkt["configuration"]["trigger"]:
+            if bkt["name"] == "images":
                 S3BucketNotification(
                     self,
                     f"{bkt['name']}_notification",
                     bucket=bucket.id,
+                    depends_on=[bucket],
                     lambda_function=[
                         S3BucketNotificationLambdaFunction(
-                            events=bkt["configuration"]["event"],
-                            lambda_function_arn=Token.as_string(
-                                bkt["configuration"]["lambda_function_arn"]
-                            ),
+                            events=["s3:ObjectCreated:*"],
+                            lambda_function_arn=bkt["configuration"][
+                                "lambda_function_arn"
+                            ],
                         )
                     ],
                 )
