@@ -82,7 +82,8 @@ jobs:
           export PATH="${HOME}/.tfenv/bin:${PATH}"
           echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> ${HOME}/.profile
 
-          tfenv install latest
+          tfenv install 1.7.3
+          tfenv use 1.7.3
 
       ## TODO: cdktf synth
       - name: CDKTF synth
