@@ -126,7 +126,9 @@ class BackendStack(TerraformStack):
             filename=resize_asset.path,
             source_code_hash=resize_asset.asset_hash,
             environment=LambdaFunctionEnvironment(variables={"STAGE": "local"}),
-            dead_letter_config={"target_arn": dlq_topic.arn},
+            dead_letter_config={
+                "target_arn": "arn:aws:sns:us-east-1:000000000000:failed-resize-topic"
+            },
         )
         LambdaFunctionEventInvokeConfig(
             self,
