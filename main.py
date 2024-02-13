@@ -101,7 +101,7 @@ class BackendStack(TerraformStack):
             "failed-resize-topic-sub",
             endpoint="my-email@example.com",
             protocol="email",
-            topic_arn="arn:aws:sns:us-east-1:000000000000:failed-resize-topic",
+            topic_arn=dlq_topic.arn,
         )
 
         # build lambdas/resize/libs folder
@@ -126,9 +126,7 @@ class BackendStack(TerraformStack):
             filename=resize_asset.path,
             source_code_hash=resize_asset.asset_hash,
             environment=LambdaFunctionEnvironment(variables={"STAGE": "local"}),
-            dead_letter_config={
-                "target_arn": "arn:aws:sns:us-east-1:000000000000:failed-resize-topic"
-            },
+            dead_letter_config={"target_arn": dlq_topic.arn},
         )
         LambdaFunctionEventInvokeConfig(
             self,
