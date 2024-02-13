@@ -100,7 +100,7 @@ class BackendStack(TerraformStack):
             self,
             "failed-resize-topic-sub",
             # TODO: enpoint email address
-            endpoint="email_address",
+            endpoint="my-email@example.com",
             protocol="email",
             topic_arn=dlq_topic.arn,
         )
@@ -166,7 +166,7 @@ class BackendStack(TerraformStack):
             SsmParameter(
                 self,
                 f"{bkt['name']}_bucket_ssm",
-                name=f"{bkt['name']}_bucket",
+                name=f"/localstack-thumbnail-app/buckets/{bkt['name']}",
                 type="String",
                 value=bucket.id,
             )
@@ -250,7 +250,7 @@ class FrontEndStack(TerraformStack):
             bucket = S3Bucket(
                 self,
                 f"{bkt['name']}_bucket",
-                bucket=f"/localstack-thumbnail-app/buckets/{bkt['name']}",
+                bucket=f"localstack-thumbnails-app-{bkt['name']}",
             )
             # Configure public access
             S3BucketPublicAccessBlock(
