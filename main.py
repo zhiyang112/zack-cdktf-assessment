@@ -99,10 +99,9 @@ class BackendStack(TerraformStack):
         SnsTopicSubscription(
             self,
             "failed-resize-topic-sub",
-            # TODO: enpoint email address
             endpoint="my-email@example.com",
             protocol="email",
-            topic_arn=dlq_topic.arn,
+            topic_arn="arn:aws:sns:us-east-1:000000000000:failed-resize-topic",
         )
 
         # build lambdas/resize/libs folder
