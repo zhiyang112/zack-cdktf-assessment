@@ -57,6 +57,11 @@ jobs:
           pipenv run localstack wait -t 30
           echo "Startup complete"
 
+      - name: Install Terraform Local
+        run: |
+          pip install terraform-local
+          tflocal init
+
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -81,15 +86,15 @@ jobs:
 
       ## TODO: cdktf synth
       - name: CDKTF synth
-        # env:
-        #   TERRAFORM_BINARY_NAME: tflocal
+        env:
+          TERRAFORM_BINARY_NAME: tflocal
         run: |
           poetry run cdktf synth
 
       ## TODO: Deploy Backend with CDKTF
       - name: Deploy Backend with CDKTF
-        # env:
-        #   TERRAFORM_BINARY_NAME: tflocal
+        env:
+          TERRAFORM_BINARY_NAME: tflocal
         run: |
           poetry run cdktf apply iac-assignment-backend
 
