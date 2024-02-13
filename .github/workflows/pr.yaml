@@ -96,14 +96,14 @@ jobs:
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
-          cdktf apply iac-assignment-backend
+          cdktf deploy iac-assignment-backend --auto-approve
 
       ## TODO: Deploy Frontend with CDKTF
       - name: Deploy Frontend with CDKTF
         env:
           TERRAFORM_BINARY_NAME: tflocal
         run: |
-          cdktf apply iac-assignment-frontend
+          cdktf deploy iac-assignment-frontend --auto-approve
 
       - name: Run Tests
         env:
