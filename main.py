@@ -18,6 +18,8 @@ from cdktf_cdktf_provider_aws.lambda_function import (
 )
 from cdktf_cdktf_provider_aws.lambda_function_event_invoke_config import (
     LambdaFunctionEventInvokeConfig,
+    LambdaFunctionEventInvokeConfigDestinationConfig,
+    LambdaFunctionEventInvokeConfigDestinationConfigOnFailure,
 )
 from cdktf_cdktf_provider_aws.s3_bucket import S3Bucket
 from cdktf_cdktf_provider_aws.s3_bucket_public_access_block import (
@@ -130,11 +132,13 @@ class BackendStack(TerraformStack):
         )
         LambdaFunctionEventInvokeConfig(
             self,
-            f"resize_invoke",
-            function_name=resize_lambda_func.function_name,
-            maximum_event_age_in_seconds=300,
-            maximum_retry_attempts=2,
-            qualifier="$LATEST",
+            "resize_invoke",
+            destination_config=LambdaFunctionEventInvokeConfigDestinationConfig(
+                on_failure=LambdaFunctionEventInvokeConfigDestinationConfigOnFailure(
+                    destination=Token.as_string(dlq_topic.arn)
+                ),
+            ),
+            function_name=Token.as_string(resize_lambda_func.function_name),
         )
 
         # ✅ Create S3 Buckets for ["images", "resized"]
