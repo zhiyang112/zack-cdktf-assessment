@@ -102,8 +102,9 @@ class BackendStack(TerraformStack):
             self,
             "failed-resize-topic-sub",
             endpoint="my-email@example.com",
-            protocol="email-json",
+            protocol="email",
             topic_arn=dlq_topic.arn,
+            depends_on=[dlq_topic],
         )
 
         # build lambdas/resize/libs folder
@@ -132,13 +133,10 @@ class BackendStack(TerraformStack):
         )
         LambdaFunctionEventInvokeConfig(
             self,
-            "resize_invoke",
-            destination_config=LambdaFunctionEventInvokeConfigDestinationConfig(
-                on_failure=LambdaFunctionEventInvokeConfigDestinationConfigOnFailure(
-                    destination=Token.as_string(dlq_topic.arn)
-                ),
-            ),
+            "example",
             function_name=Token.as_string(resize_lambda_func.function_name),
+            maximum_event_age_in_seconds=3600,
+            maximum_retry_attempts=0,
         )
 
         # ✅ Create S3 Buckets for ["images", "resized"]
