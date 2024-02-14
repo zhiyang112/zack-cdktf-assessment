@@ -2,7 +2,7 @@
 import os
 import os.path as Path
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput
+from cdktf import TerraformStack, TerraformOutput
 
 # providers
 from cdktf_cdktf_provider_aws.provider import AwsProvider
@@ -77,9 +77,3 @@ class FrontEndStack(TerraformStack):
             "localstack_url",
             value=f"http://{bucket.bucket}.s3-website.localhost.localstack.cloud:4566",
         )
-
-
-app = App()
-FrontEndStack(app, "iac-assignment-frontend")
-
-app.synth()

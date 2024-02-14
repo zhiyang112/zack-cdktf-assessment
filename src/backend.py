@@ -2,7 +2,7 @@
 import os
 import os.path as Path
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformAsset, AssetType, TerraformOutput
+from cdktf import TerraformStack, TerraformAsset, AssetType, TerraformOutput
 
 # providers
 from cdktf_cdktf_provider_aws.provider import AwsProvider
@@ -31,7 +31,7 @@ from cdktf_cdktf_provider_aws.lambda_function import (
     LambdaFunctionEnvironment,
 )
 from cdktf_cdktf_provider_aws.lambda_function_url import LambdaFunctionUrl
-from .utils import lambda_libs
+from utils import lambda_libs
 
 
 class BackendStack(TerraformStack):
@@ -179,9 +179,3 @@ class BackendStack(TerraformStack):
                 f"{function_name}_url",
                 value=function_url.function_url,
             )
-
-
-app = App()
-BackendStack(app, "iac-assignment-backend")
-
-app.synth()
