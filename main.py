@@ -171,7 +171,7 @@ class BackendStack(TerraformStack):
                 value=bucket.id,
             )
             # Create trigger
-            if bkt["name"]["configuration"]["trigger"]:
+            if bkt["configuration"]["trigger"]:
                 S3BucketNotification(
                     self,
                     f"{bkt['name']}_notification",
