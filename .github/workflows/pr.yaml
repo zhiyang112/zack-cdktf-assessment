@@ -14,13 +14,13 @@ jobs:
   run-it-tests-job:
     if: ${{ (github.event_name == 'workflow_dispatch') || (github.event.label.name == 'deploy') }}
     runs-on: ubuntu-latest
+    env:
+      TERRAFORM_BINARY_NAME: tflocal
+      TERRAFORM_VERSION: 1.7.3
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.7.2"
 
       - name: Set up Python 3.11
         id: setup-python
@@ -28,15 +28,6 @@ jobs:
         with:
           python-version: 3.11
           cache: "pipenv" # caching pipenv dependencies
-
-      # - name: "Set up Poetry"
-      #   uses: abatilo/actions-poetry@v2.1.6
-      #   with:
-      #     poetry-version: 1.2.2
-
-      # - name: "Install dependencies"
-      #   run: |
-      #     poetry install
 
       - name: Install pipenv
         id: install-pipenv
@@ -82,27 +73,24 @@ jobs:
           export PATH="${HOME}/.tfenv/bin:${PATH}"
           echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> ${HOME}/.profile
 
-          tfenv install 1.7.3
-          tfenv use 1.7.3
+          tfenv install ${{ env.TERRAFORM_VERSION }}
+          tfenv use ${{ env.TERRAFORM_VERSION }}
 
       ## TODO: cdktf synth
       - name: CDKTF synth
-        env:
-          TERRAFORM_BINARY_NAME: tflocal
+        working-directory: ./src
         run: |
           cdktf synth
 
       ## TODO: Deploy Backend with CDKTF
       - name: Deploy Backend with CDKTF
-        env:
-          TERRAFORM_BINARY_NAME: tflocal
+        working-directory: ./src
         run: |
           cdktf deploy iac-assignment-backend --auto-approve
 
       ## TODO: Deploy Frontend with CDKTF
       - name: Deploy Frontend with CDKTF
-        env:
-          TERRAFORM_BINARY_NAME: tflocal
+        working-directory: ./src
         run: |
           cdktf deploy iac-assignment-frontend --auto-approve
 
