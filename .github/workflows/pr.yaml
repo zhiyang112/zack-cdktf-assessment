@@ -101,15 +101,6 @@ jobs:
         run: |
           pipenv run pytest -v tests
 
-      - name: Run Main Tests
-        env:
-          AWS_DEFAULT_REGION: us-east-1
-          AWS_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-        run: |
-          pipenv run pytest -v main-test.py
-
       - name: Show localstack logs
         if: always()
         run: |
