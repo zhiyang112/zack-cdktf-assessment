@@ -46,9 +46,8 @@ jobs:
       TERRAFORM_BINARY_NAME: tflocal
       TERRAFORM_VERSION: 1.7.3
       NODE_VERSION: 18
-
     steps:
-      - name: name: Check out GitHub repository
+      - name: Check out GitHub repository
         uses: actions/checkout@v4
 
       - name: Set up Python
