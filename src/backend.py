@@ -31,7 +31,7 @@ from cdktf_cdktf_provider_aws.lambda_function import (
     LambdaFunctionEnvironment,
 )
 from cdktf_cdktf_provider_aws.lambda_function_url import LambdaFunctionUrl
-from .utils import lambda_libs
+from utils import lambda_libs
 
 
 class BackendStack(TerraformStack):
