@@ -34,9 +34,9 @@ jobs:
         run: |
           poetry install
 
-      # - name: Execute unit test
-      #   run: |
-      #     poetry run python -m pytest main-test.py -v
+      - name: Execute unit test
+        run: |
+          poetry run python -m pytest main-test.py -v
 
   run-it-tests-job:
     if: ${{ (github.event_name == 'workflow_dispatch') || (github.event.label.name == 'deploy') }}
