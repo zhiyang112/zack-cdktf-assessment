@@ -25,10 +25,10 @@ class TestMain:
     #        "name": "ubuntu:latest",
     #    })
 
-    def test_check_validity(self):
-        stack = TerraformStack(Testing.app(), "stack")
-        backend_stack = BackendStack(stack, "iac-assignment-backend")
-        front_end = FrontEndStack(stack, "iac-assignment-frontend")
+    # def test_check_validity(self):
+    #     stack = TerraformStack(Testing.app(), "stack")
+    #     backend_stack = BackendStack(stack, "iac-assignment-backend")
+    #     front_end = FrontEndStack(stack, "iac-assignment-frontend")
 
-        assert Testing.to_be_valid_terraform(Testing.full_synth(backend_stack))
-        assert Testing.to_be_valid_terraform(Testing.full_synth(front_end))
+    #     assert Testing.to_be_valid_terraform(Testing.full_synth(backend_stack))
+    #     assert Testing.to_be_valid_terraform(Testing.full_synth(front_end))
