@@ -17,6 +17,8 @@ jobs:
     env:
       TERRAFORM_BINARY_NAME: tflocal
       TERRAFORM_VERSION: 1.7.3
+      PYTHON_VERSION: 3.11
+      NODE_VERSION: 18
 
     steps:
       - name: Checkout
@@ -26,7 +28,7 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: "pipenv" # caching pipenv dependencies
 
       - name: Install pipenv
@@ -55,16 +57,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ env.NODE_VERSION }}
       - name: Install website dependencies
         run: npm --prefix website ci
 
-      ## TODO: Set up CDKTF cli
       - name: Install cdktf
         id: install-cdktf
         run: npm i -g cdktf-cli@0.20.3
 
-      ## TODO: Set up CDKTF cli
       - name: Install tfenv
         id: install-tfenv
         run: |
@@ -76,19 +76,17 @@ jobs:
           tfenv install ${{ env.TERRAFORM_VERSION }}
           tfenv use ${{ env.TERRAFORM_VERSION }}
 
-      ## TODO: cdktf synth
+      ## CDKTF synth and deploy
       - name: CDKTF synth
         working-directory: ./src
         run: |
           cdktf synth
 
-      ## TODO: Deploy Backend with CDKTF
       - name: Deploy Backend with CDKTF
         working-directory: ./src
         run: |
           cdktf deploy iac-assignment-backend --auto-approve
 
-      ## TODO: Deploy Frontend with CDKTF
       - name: Deploy Frontend with CDKTF
         working-directory: ./src
         run: |
@@ -102,6 +100,15 @@ jobs:
           AWS_SECRET_ACCESS_KEY: test
         run: |
           pipenv run pytest -v tests
+
+      - name: Run Main Tests
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+        run: |
+          pipenv run pytest -v main-test.py
 
       - name: Show localstack logs
         if: always()
