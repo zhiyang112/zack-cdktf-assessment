@@ -7,27 +7,54 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
+    types: [labeled]
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION: 3.11
+
 jobs:
-  run-it-tests-job:
+  unittest:
+    if: ${{ (github.event_name == 'workflow_dispatch') || (github.event.label.name == 'deploy') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out GitHub repository
         uses: actions/checkout@v4
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          terraform_version: "1.5.7"
-          terraform_wrapper: false
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Set up Python 3.11
+      - name: Set up Poetry
+        uses: abatilo/actions-poetry@v3.0.0
+        with:
+          poetry-version: 1.7.1
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Execute unit test
+        run: |
+          poetry run python -m pytest main-test.py -v
+
+  run-it-tests-job:
+    needs: unittest
+    runs-on: ubuntu-latest
+    env:
+      TERRAFORM_BINARY_NAME: tflocal
+      TERRAFORM_VERSION: 1.7.3
+      NODE_VERSION: 18
+    steps:
+      - name: Check out GitHub repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: "pipenv" # caching pipenv dependencies
 
       - name: Install pipenv
@@ -49,17 +76,47 @@ jobs:
           pipenv run localstack wait -t 30
           echo "Startup complete"
 
+      - name: Install Terraform Local
+        run: |
+          pip install terraform-local
+          tflocal init
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ env.NODE_VERSION }}
       - name: Install website dependencies
         run: npm --prefix website ci
 
-      ## TODO: Set up CDKTF cli
+      - name: Install cdktf
+        id: install-cdktf
+        run: npm i -g cdktf-cli@0.20.3
 
-      ## TODO: Deploy Backend with CDKTF
+      - name: Install tfenv
+        id: install-tfenv
+        run: |
+          git clone https://github.com/tfutils/tfenv.git ${HOME}/.tfenv
+          
+          export PATH="${HOME}/.tfenv/bin:${PATH}"
+          echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> ${HOME}/.profile
 
-      ## TODO: Deploy Frontend with CDKTF
+          tfenv install ${{ env.TERRAFORM_VERSION }}
+          tfenv use ${{ env.TERRAFORM_VERSION }}
+
+      ## CDKTF synth and deploy
+      - name: CDKTF synth
+        working-directory: ./src
+        run: |
+          cdktf synth
+
+      - name: Deploy Backend with CDKTF
+        working-directory: ./src
+        run: |
+          cdktf deploy iac-assignment-backend --auto-approve
+
+      - name: Deploy Frontend with CDKTF
+        working-directory: ./src
+        run: |
+          cdktf deploy iac-assignment-frontend --auto-approve
 
       - name: Run Tests
         env:
