@@ -15,6 +15,7 @@ env:
 
 jobs:
   unittest:
+    if: ${{ (github.event_name == 'workflow_dispatch') || (github.event.label.name == 'deploy') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out GitHub repository
@@ -39,7 +40,6 @@ jobs:
           poetry run python -m pytest main-test.py -v
 
   run-it-tests-job:
-    if: ${{ (github.event_name == 'workflow_dispatch') || (github.event.label.name == 'deploy') }}
     needs: unittest
     runs-on: ubuntu-latest
     env:
