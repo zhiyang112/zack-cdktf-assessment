@@ -87,12 +87,12 @@ jobs:
       - name: CDKTF synth
         run: |
           cdktf get
-          cdktf synth
+      ## cdktf synth
 
-      - name: Deploy Backend with CDKTF
-        working-directory: ./src
-        run: |
-          cdktf deploy iac-assignment-backend --auto-approve
+      # - name: Deploy Backend with CDKTF
+        # working-directory: ./src
+        # run: |
+        #   cdktf deploy iac-assignment-backend --auto-approve
 
       # - name: Deploy Frontend with CDKTF
       #   working-directory: ./src
