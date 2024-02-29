@@ -55,7 +55,7 @@ jobs:
         run: |
           docker pull localstack/localstack
           # Start LocalStack in the background
-          LS_LOG=trace docker localstack start
+          LS_LOG=trace docker run localstack start
           # Wait 30 seconds for the LocalStack container to become ready before timing out
           echo "Waiting for LocalStack startup..."
           docker run localstack/localstack wait -t 30
