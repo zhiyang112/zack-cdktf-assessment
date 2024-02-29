@@ -55,10 +55,10 @@ jobs:
         run: |
           docker pull localstack/localstack
           # Start LocalStack in the background
-          LS_LOG=trace docker localstack start -d
+          LS_LOG=trace docker localstack start
           # Wait 30 seconds for the LocalStack container to become ready before timing out
           echo "Waiting for LocalStack startup..."
-          docker run localstack wait -t 30
+          docker run localstack/localstack wait -t 30
           echo "Startup complete"
 
       - name: Install Terraform Local
