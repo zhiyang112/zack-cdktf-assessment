@@ -56,6 +56,7 @@ jobs:
           # Install localstack
           curl -Lo localstack-cli-3.2.0-linux-arm64-onefile.tar.gz \
           https://github.com/localstack/localstack-cli/releases/download/v3.2.0/localstack-cli-3.2.0-linux-arm64-onefile.tar.gz
+          sudo tar xvzf localstack-cli-3.2.0-linux-*-onefile.tar.gz -C /usr/local/bin
           # Pull LocalStack Docker image
           docker pull localstack/localstack
           # Start LocalStack in the background
