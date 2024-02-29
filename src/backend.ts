@@ -35,7 +35,6 @@ export class BackendStack extends TerraformStack {
         endpoint: "my-email@example.com",
         protocol: "email",
         topicArn: dlq_topic.arn,
-        dependsOn: [dlq_topic]
       });
 
     const resize_asset = new DataArchiveFile(this, "resize_asset", {

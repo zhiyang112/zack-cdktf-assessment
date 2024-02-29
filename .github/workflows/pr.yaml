@@ -70,7 +70,9 @@ jobs:
 
       - name: Install cdktf
         id: install-cdktf
-        run: npm install --global cdktf-cli@next
+        run: |
+          npm install --global cdktf-cli@next
+          npm install
 
       - name: Install tfenv
         id: install-tfenv
@@ -87,7 +89,7 @@ jobs:
       - name: CDKTF synth
         run: |
           cdktf get
-      ## cdktf synth
+          cdktf synth
 
       # - name: Deploy Backend with CDKTF
         # working-directory: ./src
