@@ -70,7 +70,7 @@ jobs:
 
       - name: Install cdktf
         id: install-cdktf
-        run: npm i -g cdktf-cli@0.20.3
+        run: npm install --global cdktf-cli@latest
 
       - name: Install tfenv
         id: install-tfenv
