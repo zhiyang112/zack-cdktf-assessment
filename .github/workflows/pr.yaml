@@ -111,7 +111,7 @@ jobs:
       - name: Show localstack logs
         if: always()
         run: |
-          pipenv run localstack logs
+          localstack logs
 
       - name: Generate a Diagnostic Report
         if: failure()
